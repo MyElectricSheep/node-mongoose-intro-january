@@ -1,4 +1,5 @@
 const Student = require('../models/Student')
+const bcrypt = require('bcrypt')
 
 // 1st syntax for exporting controllers:
 
@@ -26,6 +27,7 @@ const Student = require('../models/Student')
 
 // Get all students controller
 exports.list_students = async (req, res) => {
+  // console.log(req.headers)
     try {
       const allStudents = await Student.find({})
       res.json(allStudents)
@@ -37,7 +39,7 @@ exports.list_students = async (req, res) => {
 exports.find_student = async (req, res) => {
     const { id } = req.params
     try {
-      const targetStudent = await Student.findById(id)
+      const targetStudent = await Student.findById(id).populate('course')
       if (!targetStudent) return res.status(404).send('No such student')
       res.json(targetStudent)
     } catch (e) {
@@ -46,7 +48,7 @@ exports.find_student = async (req, res) => {
   }
 
 exports.create_student = async (req, res) => {
-    const { first_name, last_name } = req.body
+    const { first_name, last_name, course, email, password } = req.body
     // console.log(first_name, last_name)
   
     // Student.create({ first_name, last_name })
@@ -54,8 +56,15 @@ exports.create_student = async (req, res) => {
     //   .catch(err => res.status(500).send(err.message))
   
     try {
-      const newStudent = await Student.create({ first_name, last_name })
-      res.json(newStudent)
+      const newStudent = new Student({ first_name, last_name, course, email, password: await bcrypt.hash(password, 10) })
+
+      await newStudent.save()
+
+      const token = newStudent.createToken()
+      res.set('x-authorization-token', token).send('User created successfully')
+      // res.json({
+      //   token: newStudent.createToken()
+      // })
     } catch (e) {
       res.status(500).send(e.message)
     }

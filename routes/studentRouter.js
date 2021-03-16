@@ -20,8 +20,10 @@ const {
   delete_students,
 } = require('../controllers/studentController');
 
+const authorize = require('../middlewares/authorizeStudent')
+
 router.post("/", create_student);
-router.get("/", list_students);
+router.get("/", authorize, list_students);
 router.get("/:id", find_student);
 router.put("/", update_student);
 router.delete("/:id", delete_student);
